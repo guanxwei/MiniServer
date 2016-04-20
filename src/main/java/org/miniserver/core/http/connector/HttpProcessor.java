@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.miniserver.core.container.Server;
 import org.miniserver.core.http.HttpRequest;
 import org.miniserver.core.http.HttpResponse;
-import org.miniserver.core.http.RequestLine;
+import org.miniserver.core.http.utils.HttpRequestParser;
 
 /**
  * HttpProcessor which is used to handle the http request, since MiniServer is aimed at dynamic response business scenario,
@@ -57,7 +57,9 @@ public class HttpProcessor implements Runnable {
              * After we determine which context is responsible for handling this request, we will select the target context registerd in the connector
              * then delegate the reqeust.
              */
-            parseRequest(input, request);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            HttpRequestParser.parseRequestLine(reader, request);
             delegateRequest(request, response);
 
             boolean isKeepAliveOn = this.connector.isKeepAliveOn();
@@ -80,49 +82,12 @@ public class HttpProcessor implements Runnable {
             try {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.finishResponse();
+                socket.close();
             } catch (IOException e1) {
                 log.error(String.format("Can not response to client due to error [{}]", e1.getStackTrace().toString()));
             }
         }
 
-    }
-
-    private void parseRequest(InputStream input, HttpRequest request) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-        String rawRequestLine = null;
-        try {
-            while ((rawRequestLine = reader.readLine()) == null || rawRequestLine.length() > 0) {
-                log.info("Read a empty line, keep going");
-            }
-        } catch (IOException e) {
-            try {
-                socket.close();
-            } catch (IOException e1) {
-                log.error("Could not read request, close the socket!");
-            }
-        }
-        String[] siblings = rawRequestLine.split(" ");
-        request.setMethod(siblings[0]);
-        /**
-         * Set the raw requestURL to a MiniServer specific parameter defined in HttpRequest. The HttpServletRequest's methods getRequestUIL and getRequestURL
-         * will depend on this valuable when first time they are called. The raw requestURL will contain the queryString.
-         */
-        request.setRawRequestURL(siblings[1]);
-        if (siblings.length == 3) {
-            request.setProtocol(siblings[2]);
-        }
-
-    }
-
-    /**
-     * Parse the query string into key-values style, 
-     */
-    private void parseQueryStrings(BufferedReader reader, HttpRequest request) {
-        String queryString = request.getq
-    }
-
-    private void parseHttpHeaders() {
-        
     }
 
     private void delegateRequest(HttpRequest request, HttpResponse response) {

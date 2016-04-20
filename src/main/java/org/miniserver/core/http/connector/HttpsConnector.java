@@ -43,4 +43,10 @@ public class HttpsConnector implements Connector{
         
     }
 
+    @Override
+    public boolean isKeepAliveOn() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

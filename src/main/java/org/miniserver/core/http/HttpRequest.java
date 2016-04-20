@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
@@ -29,36 +30,59 @@ import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
 import org.miniserver.core.container.Server;
+import org.miniserver.core.http.utils.HttpRequestHeaders;
 
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-@Data
 public class HttpRequest implements HttpServletRequest{
 
+    /**
+     * InputStream from the received socket, will extract client request data from this.
+     */
     private InputStream input;
+
     private ServletInputStream servletInputStream;
+
     private String requestURI;
+
+    @Setter
     private String method;
+
     private String sessionID;
+
     private String characterEncoding;
+
     private int contentLnegth;
+
     private String contentType;
+
     private int port;
+
+    @Setter
     private String protocol;
+
     private Locale locale;
 
-    @Getter(value = AccessLevel.PACKAGE) @Setter(value = AccessLevel.PACKAGE)
+    @Setter
     private String rawRequestURL;
 
+    @Setter(value = AccessLevel.PRIVATE)
+    private String queryString;
+
     @Getter(value = AccessLevel.PRIVATE)
-    @Setter(value = AccessLevel.PACKAGE)
+    @Setter(value = AccessLevel.PRIVATE)
     private Map<String, String> queryStrings;
+
     private Map<String, String> parameters;
+
     private Map<String, String> cookies;
+
     private Hashtable<String, Object> attributes;
+
+    private Map<String, String> headers;
 
     public HttpRequest(InputStream input) {
         this.input = input;
@@ -109,6 +133,9 @@ public class HttpRequest implements HttpServletRequest{
      */
     @Override
     public String getContentType() {
+        if (this.contentType == null) {
+            this.contentType = this.headers.get(HttpRequestHeaders.CONTENT_TYPE);
+        }
         return this.contentType;
     }
 
@@ -360,8 +387,12 @@ public class HttpRequest implements HttpServletRequest{
 
     @Override
     public String getQueryString() {
-        // TODO Auto-generated method stub
-        return null;
+        int index = this.rawRequestURL.indexOf('?');
+        if (index > 0) {
+            this.queryString = rawRequestURL.substring(index, rawRequestURL.length());
+        }
+  
+        return this.queryString;
     }
 
     @Override
@@ -484,5 +515,12 @@ public class HttpRequest implements HttpServletRequest{
             throws IOException, ServletException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    public void addHeader(String key, String value) {
+        if (this.headers == null) {
+            this.headers = new HashMap<String, String>();
+        }
+        this.headers.put(key, value);
     }
 }

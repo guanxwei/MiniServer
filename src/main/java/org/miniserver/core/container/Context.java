@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.EventListener;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,6 +16,7 @@ import javax.servlet.FilterRegistration;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRegistration;
 import javax.servlet.ServletRegistration.Dynamic;
@@ -75,6 +77,8 @@ public class Context implements Container, ServletContext{
      * Representation of the base dir of the context, whoes {@link SourceType} is {@link SourceType.DIRECTORY}.
      */
     private Source source;
+
+    private List<ServletContextListener> listeners;
 
     @Override
     public void start() throws LifeCycleException {
@@ -480,4 +484,10 @@ public class Context implements Container, ServletContext{
         
     }
 
+    private void addServletContextListener(ServletContextListener listener) {
+        if (this.listeners == null) {
+            this.listeners = new LinkedList<ServletContextListener>();
+        }
+        this.listeners.add(listener);
+    }
 }

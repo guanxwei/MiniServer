@@ -38,7 +38,7 @@ public class HttpConnector implements Connector {
     private boolean isKeepAliveOn = false;
 
     /**
-     * Executor pool used to parse client reqeust and delegate to servlet container.
+     * Executor pool used to parse client request and delegate to servlet container.
      * Each executor in this pool will pretreat the client requests and wrap them into httpservletrequest, so that the servlet container can 
      * handle such requests.
      */
