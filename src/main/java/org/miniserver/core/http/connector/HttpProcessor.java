@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletResponse;
 
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,8 +32,10 @@ public class HttpProcessor implements Runnable {
     private Connector connector;
     private Socket socket;
     //private RequestLine requestLine;
-    HttpRequest request;
-    HttpResponse response;
+    @Getter
+    private HttpRequest request;
+    @Getter
+    private HttpResponse response;
     @Setter
     private boolean isKeepAlive = false;
 
@@ -48,8 +51,8 @@ public class HttpProcessor implements Runnable {
         try {
             input = socket.getInputStream();
             output = socket.getOutputStream();
-            request = new HttpRequest(input);
             response = new HttpResponse(output);
+            request = new HttpRequest(input, response);
             response.setRequest(request);
             response.setHeader("server", Server.SERVER_NAME);
             /**
@@ -59,7 +62,10 @@ public class HttpProcessor implements Runnable {
              */
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            request.setScheme("http");
             HttpRequestParser.parseRequestLine(reader, request);
+            HttpRequestParser.parseHeaders(reader, request);
+            HttpRequestParser.parseForm(reader, request);
             delegateRequest(request, response);
 
             boolean isKeepAliveOn = this.connector.isKeepAliveOn();
@@ -95,7 +101,6 @@ public class HttpProcessor implements Runnable {
          * Before the processor delegate the reques to the servlet container, the processor will help parse the http request first.
          * Since MiniServer is aimed at solving highly dynamic http request, file uploading is not supported.
          */
-        
-        
+        connector.delegate(request, response);
     }
 }

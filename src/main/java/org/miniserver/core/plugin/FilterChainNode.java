@@ -16,8 +16,6 @@ import org.miniserver.workflow.io.Anything;
 
 /**
  * 
- * @author guanxwei
- *
  */
 public class FilterChainNode extends SingleWorkerNodeBase implements FilterChain {
 

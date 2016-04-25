@@ -34,6 +34,7 @@ public final class HttpRequestParser {
     public static void parseHeaders(BufferedReader reader, HttpRequest request) throws IOException {
         String newLine = null;
         while ( (newLine = reader.readLine()) != null && newLine.length() > 0) {
+            System.out.println("header:" + newLine);
             String[] pair = newLine.split(":");
             request.addHeader(pair[0], pair[1]);
         }
@@ -45,18 +46,29 @@ public final class HttpRequestParser {
      * @param request
      * @throws IOException
      */
-    public static byte[] parseForm(BufferedReader reader, HttpRequest request) throws IOException {
-        StringBuffer buffer = new StringBuffer();
-        String line = null;
-        while ((line = reader.readLine()) != null) {
-            buffer.append(line);
+    public static void parseForm(BufferedReader reader, HttpRequest request) throws IOException {
+        /**
+         * If it is a Get request, do nothing.
+         */
+        if ("get".equalsIgnoreCase(request.getMethod())) {
+            return ;
         }
-        if (buffer.length() == 0) {
-            return null;
-        } else {
-            String content_type = request.getContentType();
-            String[] siblings = content_type.split(";");
-            return buffer.toString().getBytes(siblings[1]);
+
+        if ("post".equalsIgnoreCase(request.getMethod())) {
+            StringBuffer buffer = new StringBuffer();
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line);
+            }
+            if (buffer.length() == 0) {
+                return ;
+            } else {
+                /**
+                 * HTML5 support json style form data, xml style form data and standard x-www-form-urlencoded, and multipart/form-data.
+                 * MiniServer will not support multipart/form-data.
+                 */
+                request.setRawRequestBody(buffer.toString().getBytes());
+            }
         }
     }
 }

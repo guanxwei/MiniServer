@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite hostname="985aeb8bfba8.ant.amazon.com" name="org.workflow.tst.MemoryWorkflowTest" tests="3" failures="0" timestamp="12 Apr 2016 05:48:08 GMT" time="0.016" errors="0">
-  <testcase name="testHappyCase" time="0.002" classname="org.workflow.tst.MemoryWorkflowTest"/>
-  <testcase name="testUnhappyCase" time="0.001" classname="org.workflow.tst.MemoryWorkflowTest"/>
-  <testcase name="f" time="0.001" classname="org.workflow.tst.NewTest"/>
-</testsuite>

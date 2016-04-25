@@ -446,6 +446,7 @@ public class HttpResponse implements HttpServletResponse{
     }
 
     public void setStatus(int sc) {
+        this.status = sc;
     }
 
     public void setStatus(int sc, String message) {

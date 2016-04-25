@@ -78,7 +78,15 @@ public class Context implements Container, ServletContext{
      */
     private Source source;
 
+    /**
+     * Registered listeners;
+     */
     private List<ServletContextListener> listeners;
+
+    /**
+     * The rootPath of the context;
+     */
+    private String rootPath;
 
     @Override
     public void start() throws LifeCycleException {

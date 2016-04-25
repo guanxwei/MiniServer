@@ -29,6 +29,8 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
+import jdk.nashorn.internal.parser.JSONParser;
+
 import org.miniserver.core.container.Server;
 import org.miniserver.core.http.utils.HttpRequestHeaders;
 
@@ -59,6 +61,9 @@ public class HttpRequest implements HttpServletRequest{
 
     private String contentType;
 
+    @Setter
+    private String scheme;
+
     private int port;
 
     @Setter
@@ -78,15 +83,21 @@ public class HttpRequest implements HttpServletRequest{
 
     private Map<String, String> parameters;
 
-    private Map<String, String> cookies;
+    private Cookie[] cookies;
 
     private Hashtable<String, Object> attributes;
 
     private Map<String, String> headers;
 
-    public HttpRequest(InputStream input) {
+    @Setter
+    private byte[] rawRequestBody;
+
+    private HttpResponse response;
+
+    public HttpRequest(InputStream input, HttpResponse response) {
         this.input = input;
         this.servletInputStream = new RequestStream(input);
+        this.response = response;
     }
 
     @Override
@@ -149,6 +160,36 @@ public class HttpRequest implements HttpServletRequest{
      */
     @Override
     public String getParameter(String name) {
+        if (this.parameters == null) {
+            this.parameters = new HashMap<String, String>();
+            //First we'll try to parse queryString
+            String[] queryStrings = getQueryString().split("&");
+            for (String query : queryStrings) {
+                String[] pair = query.split("=");
+                this.parameters.put(pair[0], pair[1]);
+            }
+            /**
+             * If the HTTP request method is POST, then we have to parse the http body, Currently we only support json and urlencode style 
+             * body.
+             */
+            if ("post".equalsIgnoreCase(this.method)) {
+                if (this.getContentType().contains(HttpContentType.APPLICATION_JSON)) {
+                     /** 
+                      * We will do nothing, since MiniServe does not exactlly know the hierarchy of the Json object,
+                      * it should be the Servelt writer to parse the requst body.
+                      */
+                } else if (this.getContentType().contains(HttpContentType.X_WWW_FORM_URLENCODED)) {
+                    String rawString = new String(this.rawRequestBody);
+                    String[] paraStrings = rawString.split("&");
+                    for (String query : paraStrings) {
+                        String[] pair = query.split("=");
+                        this.parameters.put(pair[0], pair[1]);
+                    }
+                } else {
+                    return null;
+                }
+            }
+        }
         return this.parameters.get(name);
     }
 
@@ -176,13 +217,9 @@ public class HttpRequest implements HttpServletRequest{
         return this.protocol;
     }
 
-    /**
-     * Mini server only support http/1.1, in other words if the client does sent the request in the form of "http/1.1"
-     * Mini server will not handle the request.
-     */
     @Override
     public String getScheme() {
-        return "HTTP/1.1";
+        return this.scheme;
     }
 
     @Override
@@ -224,6 +261,9 @@ public class HttpRequest implements HttpServletRequest{
 
     @Override
     public Locale getLocale() {
+        if (this.locale == null) {
+            this.locale = new Locale(getHeaders(HttpRequestHeaders.ACCEPTED_LANGUAGE).nextElement());
+        }
         return this.locale;
     }
 
@@ -337,22 +377,33 @@ public class HttpRequest implements HttpServletRequest{
         return 0;
     }
 
+    /**
+     * A HTTP request header may container several subtype, like Accept-Language:zh-CN,en-US;q=0.7,en;q=0.3
+     */
     @Override
     public String getHeader(String name) {
-        // TODO Auto-generated method stub
-        return null;
+        return this.headers.get(name);
     }
 
     @Override
     public Enumeration<String> getHeaders(String name) {
-        // TODO Auto-generated method stub
-        return null;
+        String header = this.headers.get(name);
+        Vector<String> headers = new Vector<String>();
+        String keys = header.split(";")[0];
+        String[] split_keys = keys.split(",");
+        for (String key : split_keys) {
+            headers.add(key);
+        }
+        return headers.elements();
     }
 
+    /**
+     * Should avoid to use this method;
+     */
     @Override
     public Enumeration<String> getHeaderNames() {
-        // TODO Auto-generated method stub
-        return null;
+        Vector<String> headers = new Vector<String>(this.headers.keySet());
+        return headers.elements();
     }
 
     @Override
@@ -363,8 +414,7 @@ public class HttpRequest implements HttpServletRequest{
 
     @Override
     public String getMethod() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.method;
     }
 
     @Override
@@ -381,15 +431,24 @@ public class HttpRequest implements HttpServletRequest{
 
     @Override
     public String getContextPath() {
-        // TODO Auto-generated method stub
-        return null;
+        int index = this.rawRequestURL.indexOf("/");
+        String subString = this.rawRequestURL.substring(index, this.rawRequestURL.length());
+        index = subString.indexOf("/");
+        if (index > 0) {
+            return subString.substring(0, index);
+        } else {
+            return subString;
+        }
     }
 
     @Override
     public String getQueryString() {
+        if (queryString != null) {
+            return queryString;
+        }
         int index = this.rawRequestURL.indexOf('?');
-        if (index > 0) {
-            this.queryString = rawRequestURL.substring(index, rawRequestURL.length());
+        if (index > 0 && index < rawRequestURL.length()) {
+            this.queryString = rawRequestURL.substring(index + 1, rawRequestURL.length());
         }
   
         return this.queryString;

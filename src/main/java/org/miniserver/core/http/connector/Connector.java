@@ -2,6 +2,9 @@ package org.miniserver.core.http.connector;
 
 import org.miniserver.core.container.Container;
 import org.miniserver.core.container.Context;
+import org.miniserver.core.http.HttpRequest;
+import org.miniserver.core.http.HttpResponse;
+import org.miniserver.core.http.HttpResponseStatusMessage;
 import org.miniserver.lifecycle.core.LifeCycle;
 
 public interface Connector extends LifeCycle, Runnable{
@@ -22,5 +25,13 @@ public interface Connector extends LifeCycle, Runnable{
      * @return
      */
     public boolean isKeepAliveOn();
+
+    /**
+     * Delegate the prepared httpreques and httpresponse to the proper servelt container, basicly it should be a {@link Context} container.
+     * If the connector can not find a proper container, will send back 
+     * @param request
+     * @param response
+     */
+    public void delegate(HttpRequest request, HttpResponse response);
 
 }

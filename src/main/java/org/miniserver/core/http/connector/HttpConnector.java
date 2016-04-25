@@ -13,6 +13,8 @@ import lombok.Getter;
 
 import org.miniserver.core.config.Config;
 import org.miniserver.core.container.Container;
+import org.miniserver.core.http.HttpRequest;
+import org.miniserver.core.http.HttpResponse;
 import org.miniserver.lifecycle.core.LifeCycleEvent;
 import org.miniserver.lifecycle.core.LifeCycleEventListener;
 import org.miniserver.lifecycle.core.LifeCycleEvents;
@@ -108,7 +110,7 @@ public class HttpConnector implements Connector {
             if (key > 0) {
                 Set<SelectionKey> keys = selector.selectedKeys();
                 Iterator<SelectionKey> iterator = keys.iterator();
-                while ( iterator.hasNext()) {
+                while (iterator.hasNext()) {
                     SelectionKey selctionKey = iterator.next();
                     if (selctionKey.isAcceptable()) {
                         ServerSocketChannel channel = (ServerSocketChannel) selctionKey.channel();
@@ -195,5 +197,15 @@ public class HttpConnector implements Connector {
     @Override
     public boolean isKeepAliveOn() {
         return isKeepAliveOn;
+    }
+
+    public void delegate(HttpRequest request, HttpResponse response) {
+        String conextString = request.getContextPath();
+        Container context = this.requestMapper.get(conextString);
+        if (context != null)
+            context.invoke(request, response);
+        else {
+            response.setStatus(HttpResponse.SC_GONE);
+        }
     }
 }
