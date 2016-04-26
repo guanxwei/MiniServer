@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.servlet.http.HttpServletResponse;
+
 import lombok.Getter;
 
 import org.miniserver.core.config.Config;
@@ -199,13 +201,14 @@ public class HttpConnector implements Connector {
         return isKeepAliveOn;
     }
 
+    @Override
     public void delegate(HttpRequest request, HttpResponse response) {
         String conextString = request.getContextPath();
         Container context = this.requestMapper.get(conextString);
         if (context != null)
             context.invoke(request, response);
         else {
-            response.setStatus(HttpResponse.SC_GONE);
+            response.setStatus(HttpServletResponse.SC_GONE);
         }
     }
 }

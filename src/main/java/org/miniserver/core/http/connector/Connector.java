@@ -4,7 +4,6 @@ import org.miniserver.core.container.Container;
 import org.miniserver.core.container.Context;
 import org.miniserver.core.http.HttpRequest;
 import org.miniserver.core.http.HttpResponse;
-import org.miniserver.core.http.HttpResponseStatusMessage;
 import org.miniserver.lifecycle.core.LifeCycle;
 
 public interface Connector extends LifeCycle, Runnable{

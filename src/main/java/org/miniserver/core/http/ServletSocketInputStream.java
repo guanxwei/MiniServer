@@ -49,6 +49,7 @@ public class ServletSocketInputStream extends InputStream{
     /**
      * Read byte.
      */
+    @Override
     public int read()
         throws IOException {
         if (pos >= count) {
@@ -63,6 +64,7 @@ public class ServletSocketInputStream extends InputStream{
      * Returns the number of bytes that can be read from this input
      * stream without blocking.
      */
+    @Override
     public int available()
         throws IOException {
         return (count - pos) + is.available();
@@ -72,6 +74,7 @@ public class ServletSocketInputStream extends InputStream{
     /**
      * Close the input stream.
      */
+    @Override
     public void close()
         throws IOException {
         if (is == null)

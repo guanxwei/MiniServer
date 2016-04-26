@@ -18,8 +18,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
-import com.sun.scenario.effect.impl.sw.sse.SSEBlend_ADDPeer;
-
 public class HttpResponse implements HttpServletResponse{
 
     // the default buffer size
@@ -103,6 +101,7 @@ public class HttpResponse implements HttpServletResponse{
         return contentLength;
     }
 
+    @Override
     public String getContentType() {
         return contentType;
     }
@@ -163,7 +162,7 @@ public class HttpResponse implements HttpServletResponse{
       synchronized (headers) {
         Iterator<String> names = headers.keySet().iterator();
         while (names.hasNext()) {
-          String name = (String) names.next();
+          String name = names.next();
           ArrayList<String> values = (ArrayList<String>) headers.get(name);
           Iterator<String> items = values.iterator();
           while (items.hasNext()) {
@@ -199,7 +198,7 @@ public class HttpResponse implements HttpServletResponse{
       synchronized (cookies) {
         Iterator<Cookie> items = cookies.iterator();
         while (items.hasNext()) {
-          Cookie cookie = (Cookie) items.next();
+          Cookie cookie = items.next();
           outputWriter.print(cookie.getName());
           outputWriter.print("=");
           outputWriter.print(cookie.getValue());
@@ -255,6 +254,7 @@ public class HttpResponse implements HttpServletResponse{
 
     /** implementation of HttpServletResponse  */
 
+    @Override
     public void addCookie(Cookie cookie) {
       if (isCommitted())
         return;
@@ -265,6 +265,7 @@ public class HttpResponse implements HttpServletResponse{
       }
     }
 
+    @Override
     public void addDateHeader(String name, long value) {
       if (isCommitted())
         return;
@@ -273,6 +274,7 @@ public class HttpResponse implements HttpServletResponse{
       addHeader(name, format.format(new Date(value)));
     }
 
+    @Override
     public void addHeader(String name, String value) {
       if (isCommitted())
         return;
@@ -289,6 +291,7 @@ public class HttpResponse implements HttpServletResponse{
       }
     }
 
+    @Override
     public void addIntHeader(String name, int value) {
       if (isCommitted())
         return;
@@ -297,28 +300,34 @@ public class HttpResponse implements HttpServletResponse{
       addHeader(name, "" + value);
     }
 
+    @Override
     public boolean containsHeader(String name) {
       synchronized (headers) {
         return (headers.get(name)!=null);
       }
     }
 
+    @Override
     public String encodeRedirectURL(String url) {
       return null;
     }
 
+    @Override
     public String encodeRedirectUrl(String url) {
       return encodeRedirectURL(url);
     }
 
+    @Override
     public String encodeUrl(String url) {
       return encodeURL(url);
     }
 
+    @Override
     public String encodeURL(String url) {
       return null;
     }
 
+    @Override
     public void flushBuffer() throws IOException {
       //committed = true;
       if (bufferCount > 0) {
@@ -331,10 +340,12 @@ public class HttpResponse implements HttpServletResponse{
       }
     }
 
+    @Override
     public int getBufferSize() {
       return 0;
     }
 
+    @Override
     public String getCharacterEncoding() {
       if (encoding == null)
         return ("ISO-8859-1");
@@ -342,14 +353,17 @@ public class HttpResponse implements HttpServletResponse{
         return (encoding);
     }
 
+    @Override
     public Locale getLocale() {
       return null;
     }
 
+    @Override
     public ServletOutputStream getOutputStream() throws IOException {
       return null;
     }
 
+    @Override
     public PrintWriter getWriter() throws IOException {
       writer = new PrintWriter(output);
       return writer;
@@ -358,28 +372,36 @@ public class HttpResponse implements HttpServletResponse{
     /**
      * Has the output of this response already been committed?
      */
+    @Override
     public boolean isCommitted() {
       return (committed);
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void resetBuffer() {
     }
 
+    @Override
     public void sendError(int sc) throws IOException {
     }
 
+    @Override
     public void sendError(int sc, String message) throws IOException {
     }
 
+    @Override
     public void sendRedirect(String location) throws IOException {
     }
 
+    @Override
     public void setBufferSize(int size) {
     }
 
+    @Override
     public void setContentLength(int length) {
         if (isCommitted()) {
             return;
@@ -387,6 +409,7 @@ public class HttpResponse implements HttpServletResponse{
         this.contentLength = length;
     }
 
+    @Override
     public void setContentType(String type) {
         if (isCommitted()) {
             return;
@@ -394,12 +417,14 @@ public class HttpResponse implements HttpServletResponse{
         this.contentType = type;
     }
 
+    @Override
     public void setDateHeader(String name, long value) {
         if (isCommitted())
           return;
         setHeader(name, format.format(new Date(value)));
     }
 
+    @Override
     public void setHeader(String name, String value) {
       if (isCommitted())
         return;
@@ -424,12 +449,14 @@ public class HttpResponse implements HttpServletResponse{
       }
     }
 
+    @Override
     public void setIntHeader(String name, int value) {
       if (isCommitted())
         return;
       setHeader(name, "" + value);
     }
 
+    @Override
     public void setLocale(Locale locale) {
       if (isCommitted())
         return;
@@ -445,10 +472,12 @@ public class HttpResponse implements HttpServletResponse{
       }
     }
 
+    @Override
     public void setStatus(int sc) {
         this.status = sc;
     }
 
+    @Override
     public void setStatus(int sc, String message) {
     }
 

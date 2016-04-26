@@ -29,13 +29,10 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
-import jdk.nashorn.internal.parser.JSONParser;
-
 import org.miniserver.core.container.Server;
 import org.miniserver.core.http.utils.HttpRequestHeaders;
 
 import lombok.AccessLevel;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -474,8 +471,16 @@ public class HttpRequest implements HttpServletRequest{
 
     @Override
     public String getRequestedSessionId() {
-        // TODO Auto-generated method stub
-        return null;
+        /**
+         * We'll first try to fetch the sessionID from the query String ,if we can not find it , then we will try to find it from the cookies.
+         */
+        if (getParameter(HttpRequestHeaders.SESSION_ID) != null) {
+            return getParameter(HttpRequestHeaders.SESSION_ID);
+        } else if (1==1) {
+            return null;
+        } else {
+            return null;
+        }
     }
 
     @Override
