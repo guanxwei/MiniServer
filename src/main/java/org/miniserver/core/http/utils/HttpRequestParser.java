@@ -34,7 +34,6 @@ public final class HttpRequestParser {
     public static void parseHeaders(BufferedReader reader, HttpRequest request) throws IOException {
         String newLine = null;
         while ( (newLine = reader.readLine()) != null && newLine.length() > 0) {
-            System.out.println("header:" + newLine);
             String[] pair = newLine.split(":");
             request.addHeader(pair[0], pair[1]);
         }

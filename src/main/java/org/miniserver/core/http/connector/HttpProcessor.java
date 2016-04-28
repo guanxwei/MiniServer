@@ -31,7 +31,7 @@ public class HttpProcessor implements Runnable {
     private static AtomicInteger aliveConnections = new AtomicInteger(0);
     private Connector connector;
     private Socket socket;
-    //private RequestLine requestLine;
+
     @Getter
     private HttpRequest request;
     @Getter
@@ -52,7 +52,7 @@ public class HttpProcessor implements Runnable {
             input = socket.getInputStream();
             output = socket.getOutputStream();
             response = new HttpResponse(output);
-            request = new HttpRequest(input, response);
+            request = new HttpRequest(input);
             response.setRequest(request);
             response.setHeader("server", Server.SERVER_NAME);
             /**

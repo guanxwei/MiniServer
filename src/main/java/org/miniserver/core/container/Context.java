@@ -427,8 +427,7 @@ public class Context implements Container, ServletContext{
 
     @Override
     public void fireEvent(LifeCycleEvent event) {
-        // TODO Auto-generated method stub
-        
+        this.supporter.emitEvent(event);
     }
 
     @Override

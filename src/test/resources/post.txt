@@ -1,4 +1,4 @@
-GET http://www.amazon.com/root/index.html?query=fjdsalfjla&hello=jlfdkajlfkajl HTTP/1.1
+POST http://www.amazon.com/root/index.html HTTP/1.1
 Accept:text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 Accept-Encoding:gzip,deflate
 Accept-Language:zh-CN,en-US;q=0.7,en;q=0.3
@@ -8,3 +8,6 @@ Host:maxis-service-prod-pdx.amazon.com
 Origin:https://issues.amazon.com
 Referer:https://issues.amazon.com/issues/PEX-331
 User-Agent:Mozilla/5.0(Macintosh;IntelMacOSX10.11;rv:38.0)Gecko/20100101Firefox/38.0
+Content-Type:application/x-www-form-urlencoded;charset=UTF-8
+
+query=fjdsalfjla&hello=jlfdkajlfkajl

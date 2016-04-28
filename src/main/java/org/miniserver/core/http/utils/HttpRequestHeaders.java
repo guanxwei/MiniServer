@@ -13,7 +13,7 @@ public final class HttpRequestHeaders {
     public static final String ACCEPTED_LANGUAGE = "Accept-Language";
 
     /**
-     * When the first time client call the MiniServer will add the session-id into the cookie and send back to the client.
+     * Cookie HTTP request header.
      */
-    public static final String SESSION_ID = "session-id";
+    public static final String COOKIE = "Cookie";
 }

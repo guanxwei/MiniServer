@@ -6,10 +6,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
@@ -78,7 +80,7 @@ public class HttpRequest implements HttpServletRequest{
     @Setter(value = AccessLevel.PRIVATE)
     private Map<String, String> queryStrings;
 
-    private Map<String, String> parameters;
+    private Map<String, String[]> parameters;
 
     private Cookie[] cookies;
 
@@ -89,12 +91,9 @@ public class HttpRequest implements HttpServletRequest{
     @Setter
     private byte[] rawRequestBody;
 
-    private HttpResponse response;
-
-    public HttpRequest(InputStream input, HttpResponse response) {
+    public HttpRequest(InputStream input) {
         this.input = input;
         this.servletInputStream = new RequestStream(input);
-        this.response = response;
     }
 
     @Override
@@ -116,6 +115,22 @@ public class HttpRequest implements HttpServletRequest{
      */
     @Override
     public String getCharacterEncoding() {
+        if (this.characterEncoding == null) {
+            String content_type_header = getContentType();
+            if (content_type_header == null) {
+                //Clinet did not send content-type to server, the server will use the default encoding "ISO-8859-1";
+                this.characterEncoding = "ISO-8859-1";
+            } else {
+                int semicolon_index = content_type_header.indexOf(";");
+                String charset = content_type_header.substring(semicolon_index, content_type_header.length());
+                if (charset.length() > 0) {
+                    int equal_index = charset.indexOf("=");
+                    this.characterEncoding = charset.substring(equal_index + 1);
+                }
+            }
+            
+        }
+
         return this.characterEncoding;
     }
 
@@ -142,8 +157,9 @@ public class HttpRequest implements HttpServletRequest{
     @Override
     public String getContentType() {
         if (this.contentType == null) {
-            this.contentType = this.headers.get(HttpRequestHeaders.CONTENT_TYPE);
+            this.contentType = getHeader(HttpRequestHeaders.CONTENT_TYPE);
         }
+
         return this.contentType;
     }
 
@@ -157,41 +173,17 @@ public class HttpRequest implements HttpServletRequest{
      */
     @Override
     public String getParameter(String name) {
-        if (this.parameters == null) {
-            this.parameters = new HashMap<String, String>();
-            //First we'll try to parse queryString
-            String[] queryStrings = getQueryString().split("&");
-            for (String query : queryStrings) {
-                String[] pair = query.split("=");
-                this.parameters.put(pair[0], pair[1]);
-            }
-            /**
-             * If the HTTP request method is POST, then we have to parse the http body, Currently we only support json and urlencode style 
-             * body.
-             */
-            if ("post".equalsIgnoreCase(this.method)) {
-                if (this.getContentType().contains(HttpContentType.APPLICATION_JSON)) {
-                     /** 
-                      * We will do nothing, since MiniServe does not exactlly know the hierarchy of the Json object,
-                      * it should be the Servelt writer to parse the requst body.
-                      */
-                } else if (this.getContentType().contains(HttpContentType.X_WWW_FORM_URLENCODED)) {
-                    String rawString = new String(this.rawRequestBody);
-                    String[] paraStrings = rawString.split("&");
-                    for (String query : paraStrings) {
-                        String[] pair = query.split("=");
-                        this.parameters.put(pair[0], pair[1]);
-                    }
-                } else {
-                    return null;
-                }
-            }
-        }
-        return this.parameters.get(name);
+        assembleParameterMap();
+        /**
+         * If the querystrin and http body both contain a parameter with the same name, we will defaultly return this first one,
+         * that is the query string edition.
+         */
+        return this.parameters.get(name) == null ? null : this.parameters.get(name)[0];
     }
 
     @Override
     public Enumeration<String> getParameterNames() {
+        assembleParameterMap();
         Vector<String> vector = new Vector<String>(this.parameters.keySet());
 
         return vector.elements();
@@ -199,8 +191,9 @@ public class HttpRequest implements HttpServletRequest{
 
     @Override
     public String[] getParameterValues(String name) {
-        // TODO Auto-generated method stub
-        return null;
+        assembleParameterMap();
+
+        return this.parameters.get(name);
     }
 
     @Override
@@ -364,8 +357,30 @@ public class HttpRequest implements HttpServletRequest{
 
     @Override
     public Cookie[] getCookies() {
-        // TODO Auto-generated method stub
-        return null;
+        if (cookies != null) {
+            return this.cookies;
+        }
+
+        String rawCookiesText = getHeader(HttpRequestHeaders.COOKIE);
+        if (rawCookiesText == null || rawCookiesText.length() == 0) {
+            return null;
+        } else {
+            String[] paris = rawCookiesText.split(";");
+            List<Cookie> cookies = new ArrayList<Cookie>();
+            for (String pair : paris) {
+                String[] key_to_value = pair.split("=");
+                Cookie cookie = new Cookie(key_to_value[0], key_to_value[1]);
+                cookies.add(cookie);
+            }
+
+            int size = cookies.size();
+            this.cookies = new Cookie[size];
+            while (size > 0) {
+                this.cookies[--size] = cookies.get(size);
+            }
+        }
+
+        return this.cookies;
     }
 
     @Override
@@ -471,28 +486,51 @@ public class HttpRequest implements HttpServletRequest{
 
     @Override
     public String getRequestedSessionId() {
-        /**
-         * We'll first try to fetch the sessionID from the query String ,if we can not find it , then we will try to find it from the cookies.
-         */
-        if (getParameter(HttpRequestHeaders.SESSION_ID) != null) {
-            return getParameter(HttpRequestHeaders.SESSION_ID);
-        } else if (1==1) {
-            return null;
-        } else {
-            return null;
+        if (this.sessionID == null) {
+            /**
+             * We'll first try to fetch the sessionID from the query String ,if we can not find it , then we will try to find it from the cookies.
+             */
+            if (getParameter(HttpUtils.HTTP_UTILS_CONSTANT_KEYS_VALUES_PAIR.get("sessionID")) != null) {
+                this.sessionID = getParameter(HttpUtils.HTTP_UTILS_CONSTANT_KEYS_VALUES_PAIR.get("sessionID"));
+            } else if (HttpUtils.isCookiesContainSessionID(getCookies())) {
+                this.sessionID = HttpUtils.fetchSessionIDFromCookies(getCookies());
+            } else {
+                this.sessionID = "";
+                return null;
+            }
         }
+
+        return this.sessionID.length() == 0 ? null : this.sessionID;
     }
 
     @Override
     public String getRequestURI() {
-        // TODO Auto-generated method stub
-        return null;
+        if (this.requestURI == null) {
+            if (this.rawRequestURL.indexOf("http") < 0) {
+                int index = this.rawRequestURL.indexOf("?");
+                this.requestURI =  this.rawRequestURL.substring(0, index);
+            } else {
+                String temp = this.rawRequestURL.replace(this.getScheme() + "://", "");
+                int index = temp.indexOf("/");
+                int index_question_mark = temp.indexOf("?");
+                if (index_question_mark < 0) {
+                    this.requestURI = temp.substring(index, temp.length());
+                } else {
+                    this.requestURI = temp.substring(index, index_question_mark);
+                }
+            }
+        }
+
+        return this.requestURI;
     }
 
     @Override
     public StringBuffer getRequestURL() {
-        // TODO Auto-generated method stub
-        return null;
+        int index = rawRequestURL.indexOf('?');
+
+        StringBuffer buffer = new StringBuffer();
+        buffer.append(rawRequestURL.subSequence(0, index));
+        return buffer;
     }
 
     @Override
@@ -585,6 +623,64 @@ public class HttpRequest implements HttpServletRequest{
         if (this.headers == null) {
             this.headers = new HashMap<String, String>();
         }
+
         this.headers.put(key, value);
+    }
+
+    private void assembleParameterMap() {
+        if (this.parameters == null) {
+            this.parameters = new HashMap<String, String[]>();
+            //First we'll try to parse queryString
+            if (getQueryString() != null) {
+                String[] queryStrings = getQueryString().split("&");
+                for (String query : queryStrings) {
+                    String[] pair = query.split("=");
+                    if (this.parameters.containsKey(pair[0])) {
+                        String[] src = this.parameters.get(pair[0]);
+                        String[] values = new String[src.length + 1];
+                        System.arraycopy(src, 0, values, 0, src.length);
+                        values[src.length] = pair[1];
+                        this.parameters.put(pair[0], values);
+                    } else {
+                        String[] values = new String[1];
+                        values[0] = pair[1];
+                        this.parameters.put(pair[0], values);
+                    }
+                }
+            };
+            /**
+             * If the HTTP request method is POST, then we have to parse the http body, Currently we only support json and urlencode style 
+             * body.
+             */
+            if ("post".equalsIgnoreCase(this.method)) {
+                if (this.getContentType().contains(HttpContentType.APPLICATION_JSON)) {
+                     /** 
+                      * We will do nothing, since MiniServe does not exactlly know the hierarchy of the Json object,
+                      * it should be the Servelt writer to parse the requst body.
+                      */
+                } else if (this.getContentType().contains(HttpContentType.X_WWW_FORM_URLENCODED)) {
+                    String rawString = new String(this.rawRequestBody);
+                    String[] paraStrings = rawString.split("&");
+                    for (String query : paraStrings) {
+                        String[] pair = query.split("=");
+                        if (this.parameters.containsKey(pair[0])) {
+                            String[] src = this.parameters.get(pair[0]);
+                            String[] values = new String[src.length + 1];
+                            System.arraycopy(src, 0, values, 0, src.length);
+                            values[src.length] = pair[1];
+                            this.parameters.put(pair[0], values);
+                        } else {
+                            String[] values = new String[1];
+                            values[0] = pair[1];
+                            this.parameters.put(pair[0], values);
+                        }
+                    }
+                } else {
+                    /**
+                     * MiniServer will not help parse other form type http body data, it is the customers' duty to parse the body. We just do nothing. 
+                     */
+                }
+            }
+        }
     }
 }

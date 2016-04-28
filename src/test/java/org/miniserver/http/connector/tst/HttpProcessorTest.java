@@ -40,7 +40,7 @@ public class HttpProcessorTest {
     }
 
     @Test
-    public void testGetHttpParseRequestLine() throws Exception {
+    public void testGetHttpRequestParse() throws Exception {
         String usrDir = System.getProperty("user.dir");
         String file_separator = System.getProperty("file.separator");
         InputStream fileInput = new FileInputStream(usrDir + file_separator + "target" + file_separator + "test-classes" + file_separator + "get.txt");
@@ -61,7 +61,39 @@ public class HttpProcessorTest {
         Assert.assertEquals(request.getParameter("query"), "fjdsalfjla");
         Assert.assertEquals(request.getParameter("hello"), "jlfdkajlfkajl");
         Assert.assertEquals(request.getLocale(), new Locale("zh-CN"));
+        Assert.assertNotNull(request.getCookies());
+        Assert.assertEquals(request.getRequestedSessionId(), "832-2604240-6528132");
+        Assert.assertEquals(request.getRequestURI(), "/root/index.html");
+        Assert.assertNotNull(request.getCharacterEncoding());
+        Assert.assertEquals(request.getCharacterEncoding(), "ISO-8859-1");
+
     }
 
-    
+    @Test
+    public void testPostHttpRequestParse() throws Exception {
+        String usrDir = System.getProperty("user.dir");
+        String file_separator = System.getProperty("file.separator");
+        InputStream fileInput = new FileInputStream(usrDir + file_separator + "target" + file_separator + "test-classes" + file_separator + "post.txt");
+        OutputStream fileOutput = new FileOutputStream(usrDir + file_separator + "target" + file_separator + "test-classes" + file_separator + "post_output.txt");
+        Mockito.when(socket.getInputStream()).thenReturn(fileInput);
+        Mockito.when(socket.getOutputStream()).thenReturn(fileOutput);
+        this.processor = new HttpProcessor(connector, socket);
+        this.service.submit(processor);
+        Thread.sleep(100);
+        HttpRequest request = processor.getRequest();
+        HttpResponse response = processor.getResponse();
+        Assert.assertNotNull(request);
+        Assert.assertNotNull(response);
+        Assert.assertEquals(request.getMethod(), "POST");
+        Assert.assertEquals(request.getScheme(), "http");
+        Assert.assertEquals(request.getProtocol(), "HTTP/1.1");
+        Assert.assertEquals(request.getQueryString(), null);
+        Assert.assertEquals(request.getParameter("query"), "fjdsalfjla");
+        Assert.assertEquals(request.getParameter("hello"), "jlfdkajlfkajl");
+        Assert.assertEquals(request.getLocale(), new Locale("zh-CN"));
+        Assert.assertNotNull(request.getCookies());
+        Assert.assertEquals(request.getRequestedSessionId(), "832-2604240-6528132");
+        Assert.assertEquals(request.getRequestURI(), "/root/index.html");
+        Assert.assertEquals(request.getCharacterEncoding(), "UTF-8");
+    }
 }
